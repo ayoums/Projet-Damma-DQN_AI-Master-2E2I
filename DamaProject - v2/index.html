@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moroccan Dama</title>
+    <link rel="icon" type="image/png" href="assets/morocco.png">
+    <link rel="apple-touch-icon" href="assets/morocco.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/board.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0"></script>
+</head>
+<body class="board-classic piece-classic">
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen active screen-loading">
+    <div class="loading-inner">
+        <img src="assets/morocco.png" alt="Morocco" class="loading-logo">
+        <h1 class="game-title">MOROCCAN DAMA</h1>
+        <p class="loading-sub">Heritage Edition</p>
+        <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+        <p class="loading-hint">Initialising board engine...</p>
+    </div>
+</div>
+
+<!-- MENU -->
+<div id="screen-menu" class="screen screen-menu hidden">
+    <div class="menu-bg-overlay"></div>
+    <div class="menu-content">
+        <div class="menu-hero">
+            <img src="assets/morocco.png" alt="Morocco" class="menu-logo">
+            <h1 class="game-title">MOROCCAN DAMA</h1>
+            <p class="menu-tagline">Heritage Edition</p>
+        </div>
+        <div class="menu-wallet">
+            <img src="assets/Coin.png" alt="coin" class="coin-icon-sm">
+            <span id="menu-coins">0</span>
+            <span class="wallet-label">coins</span>
+        </div>
+        <div class="menu-settings">
+<!-- AI only mode — 2-player removed -->
+            <div class="setting-row">
+                <span class="setting-label">Difficulty</span>
+                <div class="pill-group">
+                    <button class="pill-btn diff-btn" data-diff="easy"   onclick="setDifficulty('easy')">Easy</button>
+                    <button class="pill-btn diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+                    <button class="pill-btn diff-btn" data-diff="hard"   onclick="setDifficulty('hard')">Hard</button>
+                </div>
+            </div>
+        </div>
+        <nav class="menu-nav">
+            <button class="menu-btn menu-btn-primary" onclick="showScreen('screen-game')">
+                &#9654; Play Now
+            </button>
+            <button class="menu-btn menu-btn-gold" id="daily-btn" onclick="startDaily()">
+                &#128197; Daily Challenge
+            </button>
+            <div class="menu-row-2">
+                <button class="menu-btn menu-btn-sm menu-btn-teal" onclick="showScreen('screen-store')">&#128722; Shop</button>
+                <button class="menu-btn menu-btn-sm menu-btn-grey" onclick="showScreen('screen-leaderboard')">&#128202; Stats</button>
+                <button class="menu-btn menu-btn-sm menu-btn-grey" onclick="showScreen('screen-achievements')">&#127942; Trophies</button>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen screen-game hidden">
+    <header class="game-header">
+        <button class="icon-btn" onclick="showScreen('screen-menu')">&#9664;</button>
+        <div class="diff-pills">
+            <button class="pill-btn diff-btn" data-diff="easy"   onclick="setDifficulty('easy')">Easy</button>
+            <button class="pill-btn diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+            <button class="pill-btn diff-btn" data-diff="hard"   onclick="setDifficulty('hard')">Hard</button>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn" id="sound-btn" onclick="toggleSound()">&#128266;</button>
+            <button class="icon-btn" onclick="showScreen('screen-store')">&#128722;</button>
+        </div>
+    </header>
+
+    <div class="scoreboard">
+        <div class="score-player">
+            <img src="assets/human.png" alt="You" class="avatar">
+            <div class="score-info">
+                <span class="score-name">You</span>
+                <span class="score-count" id="player-score">12</span>
+            </div>
+        </div>
+        <div class="score-center">
+            <div class="turn-status" id="turn-indicator">Your Turn</div>
+            <div class="wallet-bar">
+                <img src="assets/Coin.png" alt="" class="coin-icon-xs">
+                <span id="game-coins">0</span>
+            </div>
+        </div>
+        <div class="score-player score-player-right">
+            <div class="score-info score-info-right">
+                <span class="score-name" id="p2-label">AI Bot</span>
+                <span class="score-count" id="ai-score">12</span>
+            </div>
+            <img src="assets/Bot.jpg" alt="AI" class="avatar">
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button class="action-btn action-undo" id="undo-btn" onclick="undoMove()" disabled>
+            &#8629; Undo <span class="action-cost">10G</span>
+        </button>
+        <button class="action-btn action-hint" onclick="getHint()">
+            &#128161; Hint <span class="action-cost">5G</span>
+        </button>
+        <button class="action-btn action-again" id="play-again-btn" onclick="playAgain()" style="display:none">
+            &#9654; Play Again
+        </button>
+    </div>
+
+    <div class="board-frame">
+        <div class="board-coords-top">
+            <span>A</span><span>B</span><span>C</span><span>D</span>
+            <span>E</span><span>F</span><span>G</span><span>H</span>
+        </div>
+        <div class="board-middle">
+            <div class="board-coords-side">
+                <span>8</span><span>7</span><span>6</span><span>5</span>
+                <span>4</span><span>3</span><span>2</span><span>1</span>
+            </div>
+            <div class="board-wrapper">
+                <div id="game-board"></div>
+            </div>
+            <div class="board-coords-side">
+                <span>8</span><span>7</span><span>6</span><span>5</span>
+                <span>4</span><span>3</span><span>2</span><span>1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="move-log-panel">
+        <button class="move-log-toggle"
+            onclick="this.parentElement.querySelector('.move-log-body').classList.toggle('collapsed')">
+            &#128203; Move Log <span class="toggle-hint">tap to expand</span>
+        </button>
+        <div class="move-log-body collapsed">
+            <ul id="move-log-list"></ul>
+        </div>
+    </div>
+</div>
+
+<!-- STORE -->
+<div id="screen-store" class="screen screen-store hidden">
+    <header class="page-header">
+        <button class="icon-btn" onclick="showScreen('screen-menu')">&#9664;</button>
+        <h2 class="page-title">&#128722; Item Shop</h2>
+        <div class="page-wallet">
+            <img src="assets/Coin.png" alt="" class="coin-icon-xs">
+            <span id="store-coins">0</span>G
+        </div>
+    </header>
+    <div class="store-tabs">
+        <button class="store-tab active" data-tab="board" onclick="renderStoreTab('board')">&#9632; Boards</button>
+        <button class="store-tab" data-tab="piece" onclick="renderStoreTab('piece')">&#9679; Pieces</button>
+    </div>
+    <div id="store-grid" class="store-grid"></div>
+    <div class="earn-strip">
+        <img src="assets/Coin.png" alt="" class="coin-icon-xs">
+        <span>Capture +5G</span><span class="earn-dot">&#183;</span>
+        <span>Win +50G</span><span class="earn-dot">&#183;</span>
+        <span>Daily +100G</span><span class="earn-dot">&#183;</span>
+        <span>Streak bonus</span>
+    </div>
+</div>
+
+<!-- STATS -->
+<div id="screen-leaderboard" class="screen hidden">
+    <header class="page-header">
+        <button class="icon-btn" onclick="showScreen('screen-menu')">&#9664;</button>
+        <h2 class="page-title">&#128202; Stats</h2>
+        <div class="page-wallet">
+            <img src="assets/Coin.png" alt="" class="coin-icon-xs">
+            <span id="leaderboard-coins">0</span>G
+        </div>
+    </header>
+    <div id="leaderboard-content" class="content-panel"></div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div id="screen-achievements" class="screen hidden">
+    <header class="page-header">
+        <button class="icon-btn" onclick="showScreen('screen-menu')">&#9664;</button>
+        <h2 class="page-title">&#127942; Achievements</h2>
+        <div style="width:60px"></div>
+    </header>
+    <div id="achievements-content" class="achievements-grid"></div>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div id="gameover-overlay" class="gameover-overlay hidden">
+    <img id="gameover-img" src="" alt="result" class="gameover-img">
+    <button class="gameover-btn" onclick="playAgain()">&#9654; Play Again</button>
+</div>
+
+<!-- ACHIEVEMENT TOASTS -->
+<div id="achievement-container"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

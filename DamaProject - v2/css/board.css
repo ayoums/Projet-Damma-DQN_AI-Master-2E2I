@@ -1,0 +1,373 @@
+/* === BOARD FRAME & COORDINATES =========================================== */
+:root {
+    --sq:   clamp(36px, 9.5vw, 64px);
+    --side: clamp(22px, 5vw, 28px);
+
+    /* Motion tokens — change one value to re-tune the whole game feel */
+    --spring:        cubic-bezier(0.34, 1.56, 0.64, 1);   /* bouncy spring   */
+    --spring-soft:   cubic-bezier(0.25, 1.35, 0.45, 1);   /* gentle spring   */
+    --ease-out-expo: cubic-bezier(0.19, 1.00, 0.22, 1.00);/* fast-out settle */
+    --ease-snap:     cubic-bezier(0.23, 1.00, 0.32, 1.00);/* snappy release  */
+    --t-piece:  160ms;
+    --t-fast:    90ms;
+    --t-slow:   320ms;
+}
+
+.board-frame {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin: 8px auto;
+}
+
+.board-coords-top,
+.board-coords-bottom {
+    display: grid;
+    grid-template-columns: var(--side) repeat(8, var(--sq)) var(--side);
+    width: 100%;
+}
+.board-coords-top span,
+.board-coords-bottom span {
+    display: flex; align-items: center; justify-content: center;
+    height: 20px;
+    font-size: 0.58rem; font-weight: 800;
+    color: var(--text3); letter-spacing: 1.5px;
+    text-transform: uppercase; font-family: 'Nunito', sans-serif; opacity: 0.75;
+    transition: opacity var(--t-fast) ease;
+}
+.coord-spacer { pointer-events: none; }
+
+.board-middle {
+    display: grid;
+    grid-template-columns: var(--side) auto var(--side);
+    align-items: stretch;
+}
+.board-coords-side {
+    display: grid;
+    grid-template-rows: repeat(8, var(--sq));
+}
+.board-coords-side span {
+    display: flex; align-items: center; justify-content: center;
+    height: var(--sq);
+    font-size: 0.58rem; font-weight: 800;
+    color: var(--text3); font-family: 'Nunito', sans-serif;
+    opacity: 0.75; letter-spacing: 1px;
+    transition: opacity var(--t-fast) ease;
+}
+
+/* === BOARD WRAPPER ======================================================== */
+.board-wrapper {
+    padding: 10px;
+    background-color: var(--board-border, #3d1c00);
+    background-size: 300px;
+    border: 3px solid rgba(0,0,0,0.75);
+    border-radius: 5px;
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 16px 56px rgba(0,0,0,0.85),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    transition: box-shadow var(--t-slow) ease;
+    position: relative;
+}
+
+/* === BOARD GRID =========================================================== */
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(8, var(--sq));
+    grid-template-rows:    repeat(8, var(--sq));
+    border: 1px solid rgba(0,0,0,0.6);
+    border-radius: 2px; overflow: hidden;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+}
+
+/* === SQUARES ============================================================== */
+.square {
+    display: flex; justify-content: center; align-items: center;
+    position: relative; overflow: visible;
+    transition: background-color 220ms ease;
+}
+.light { background-color: var(--light-sq); }
+.dark  { background-color: var(--dark-sq);  }
+.square::after {
+    content: ''; position: absolute; inset: 0;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.15);
+    pointer-events: none;
+}
+body.board-neon .dark  { background-image: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,0,127,0.05) 3px,rgba(255,0,127,0.05) 4px); }
+body.board-neon .light { background-image: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(100,100,255,0.04) 3px,rgba(100,100,255,0.04) 4px); }
+
+/* === INTERACTION HIGHLIGHTS ============================================== */
+.trail-from {
+    box-shadow: inset 0 0 0 3px rgba(231,76,60,0.7) !important;
+    transition: box-shadow 300ms ease;
+}
+.trail-to {
+    box-shadow: inset 0 0 0 3px rgba(46,204,113,0.7) !important;
+    transition: box-shadow 300ms ease;
+}
+
+.hint-dest {
+    background-color: rgba(241,196,15,0.22) !important;
+    animation: hintPulse 1.1s var(--ease-out-expo) infinite alternate;
+}
+@keyframes hintPulse {
+    from { background-color: rgba(241,196,15,0.08) !important; box-shadow: inset 0 0 0 0px rgba(241,196,15,0.2); }
+    to   { background-color: rgba(241,196,15,0.42) !important; box-shadow: inset 0 0 0 2px rgba(241,196,15,0.5); }
+}
+
+/* Valid move dot — smooth breathe */
+.valid-dest { cursor: pointer; }
+.valid-dest::before {
+    content: ''; position: absolute;
+    width: 30%; height: 30%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(46,204,113,0.95) 0%, rgba(46,204,113,0.55) 70%);
+    box-shadow: 0 0 14px rgba(46,204,113,0.7), 0 0 4px rgba(46,204,113,0.4);
+    z-index: 2;
+    animation: moveDot 1.0s var(--ease-out-expo) infinite alternate;
+    pointer-events: none;
+}
+@keyframes moveDot {
+    from { transform: scale(0.75); opacity: 0.5; box-shadow: 0 0 8px rgba(46,204,113,0.5); }
+    to   { transform: scale(1.15); opacity: 1.0; box-shadow: 0 0 18px rgba(46,204,113,0.8); }
+}
+.valid-dest.capture-dest::before {
+    background: radial-gradient(circle, rgba(231,76,60,0.95) 0%, rgba(231,76,60,0.55) 70%);
+    box-shadow: 0 0 14px rgba(231,76,60,0.7), 0 0 4px rgba(231,76,60,0.4);
+    animation: captureDot 0.85s var(--ease-out-expo) infinite alternate;
+}
+@keyframes captureDot {
+    from { transform: scale(0.8);  opacity: 0.6; box-shadow: 0 0 8px rgba(231,76,60,0.5); }
+    to   { transform: scale(1.2);  opacity: 1.0; box-shadow: 0 0 22px rgba(231,76,60,0.85); }
+}
+
+/* =========================================================================
+   PIECES
+   pVal > 0 → class="white" → AI   (never skinned)
+   pVal < 0 → class="red"   → PLAYER (skins in themes.css)
+   ========================================================================= */
+.piece {
+    width: 82%; height: 82%;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative; z-index: 3;
+
+    /* Rich multi-layer transition — every property eased independently */
+    transition:
+        transform   var(--t-piece) var(--spring),
+        box-shadow  var(--t-piece) ease,
+        filter      var(--t-fast)  ease,
+        outline     var(--t-fast)  ease,
+        background  var(--t-slow)  ease;
+
+    will-change: transform, box-shadow;
+}
+
+/* Hover — smooth lift with spring */
+.piece:hover {
+    transform: scale(1.10) translateY(-3px);
+    filter: brightness(1.07);
+}
+
+/* Press — immediate snap down */
+.piece:active {
+    transform: scale(0.94) translateY(1px);
+    transition-duration: var(--t-fast);
+    transition-timing-function: var(--ease-snap);
+}
+
+/* ── AI piece (white) — fixed, never restyled ────────────────────────────── */
+.piece.white {
+    background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.60) 0%, transparent 52%),
+        radial-gradient(circle at 65% 70%, rgba(0,0,0,0.18) 0%,   transparent 55%),
+        var(--p1-color, #c8bfb0);
+    border: 2.5px solid rgba(0,0,0,0.22);
+    box-shadow:
+        0 5px 10px rgba(0,0,0,0.55),
+        0 2px 0   rgba(255,255,255,0.12) inset,
+        0 -3px 6px rgba(0,0,0,0.35) inset;
+}
+.piece.white:hover {
+    box-shadow:
+        0 8px 18px rgba(0,0,0,0.6),
+        0 2px 0   rgba(255,255,255,0.18) inset,
+        0 -3px 6px rgba(0,0,0,0.35) inset;
+}
+
+/* ── Player piece (red) — default skin; overridden by themes ─────────────── */
+.piece.red {
+    background:
+        radial-gradient(circle at 33% 28%, rgba(255,255,255,0.52) 0%, transparent 52%),
+        radial-gradient(circle at 65% 70%, rgba(0,0,0,0.25) 0%,   transparent 55%),
+        var(--p2-color, #c0392b);
+    border: 2.5px solid rgba(0,0,0,0.30);
+    box-shadow:
+        0 5px 10px rgba(0,0,0,0.55),
+        0 2px 0   rgba(255,255,255,0.12) inset,
+        0 -3px 6px rgba(0,0,0,0.35) inset;
+}
+.piece.red:hover {
+    box-shadow:
+        0 8px 18px rgba(0,0,0,0.65),
+        0 2px 0   rgba(255,255,255,0.18) inset,
+        0 -3px 6px rgba(0,0,0,0.35) inset;
+}
+
+/* ── King crown — Unicode ♛ styled beautifully ────────────────────────────── */
+.piece.king::after {
+    content: '♛';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(12px, 2.8vw, 21px);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 5;
+    /* Smooth crown appearance on king promotion */
+    animation: crownAppear var(--t-slow) var(--spring) both;
+}
+
+@keyframes crownAppear {
+    0%   { transform: translate(-50%, -50%) scale(0) rotate(-30deg); opacity: 0; }
+    60%  { transform: translate(-50%, -50%) scale(1.25) rotate(5deg); }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(0deg);  opacity: 1; }
+}
+
+/* Player king: vivid gold crown on dark red piece */
+.piece.red.king::after {
+    color: #f1c40f;
+    text-shadow:
+        0 0 8px  rgba(241,196,15,0.9),
+        0 0 18px rgba(241,196,15,0.5),
+        0 2px 4px rgba(0,0,0,0.95);
+}
+
+/* AI king: dark charcoal crown on light cream piece */
+.piece.white.king::after {
+    color: #2c2416;
+    text-shadow:
+        0 1px 3px rgba(0,0,0,0.6),
+        0 0 6px  rgba(0,0,0,0.25);
+}
+
+/* ── Selection ring — animated pulse ─────────────────────────────────────── */
+.piece.selected-piece {
+    outline: 3px solid #2ecc71;
+    outline-offset: 3px;
+    animation: selectionPulse 1.4s var(--ease-out-expo) infinite;
+    transform: scale(1.05);
+}
+@keyframes selectionPulse {
+    0%,100% { box-shadow: 0 0 0 4px rgba(46,204,113,0.30), 0 6px 16px rgba(0,0,0,0.65), 0 2px 0 rgba(255,255,255,0.1) inset; }
+    50%     { box-shadow: 0 0 0 8px rgba(46,204,113,0.12), 0 6px 16px rgba(0,0,0,0.65), 0 2px 0 rgba(255,255,255,0.1) inset; }
+}
+
+/* Multi-jump forced piece */
+.piece.active-multijump {
+    outline: 3px solid #e74c3c;
+    outline-offset: 3px;
+    animation: multijumpPulse 0.7s ease-in-out infinite;
+}
+@keyframes multijumpPulse {
+    0%,100% { box-shadow: 0 0 0 4px rgba(231,76,60,0.35), 0 0 18px rgba(231,76,60,0.45), 0 5px 12px rgba(0,0,0,0.6); }
+    50%     { box-shadow: 0 0 0 7px rgba(231,76,60,0.20), 0 0 32px rgba(231,76,60,0.65), 0 5px 12px rgba(0,0,0,0.6); }
+}
+
+/* Hint source glow */
+.piece.hint-source {
+    animation: hintSourcePulse 1.0s var(--ease-out-expo) infinite alternate;
+}
+@keyframes hintSourcePulse {
+    from { box-shadow: 0 0 0 3px #f1c40f, 0 0 12px rgba(241,196,15,0.5), 0 5px 12px rgba(0,0,0,0.55); }
+    to   { box-shadow: 0 0 0 5px #f1c40f, 0 0 24px rgba(241,196,15,0.85), 0 5px 12px rgba(0,0,0,0.55); }
+}
+
+/* ── Piece land animation — physical bounce ───────────────────────────────── */
+@keyframes pieceLand {
+    0%   { transform: scale(1.30) translateY(-10px); opacity: 0.5; filter: brightness(1.3); }
+    40%  { transform: scale(0.91) translateY(2px);   filter: brightness(1.0); }
+    65%  { transform: scale(1.05) translateY(-1px); }
+    82%  { transform: scale(0.98); }
+    100% { transform: scale(1);    opacity: 1; filter: brightness(1.0); }
+}
+.piece-land {
+    animation: pieceLand 380ms var(--ease-out-expo) forwards;
+}
+
+/* ── King promotion — dramatic spin + crown burst ─────────────────────────── */
+@keyframes kingPromo {
+    0%   { transform: scale(1)    rotate(0deg);   filter: brightness(1); }
+    20%  { transform: scale(1.18) rotate(-12deg); filter: brightness(1.5); }
+    50%  { transform: scale(1.22) rotate(12deg);  filter: brightness(1.7); }
+    75%  { transform: scale(1.08) rotate(-4deg);  filter: brightness(1.2); }
+    100% { transform: scale(1)    rotate(0deg);   filter: brightness(1); }
+}
+.piece.king-promo {
+    animation: kingPromo 550ms var(--ease-out-expo);
+}
+
+/* ── Piece removal — captured pieces fade out ─────────────────────────────── */
+@keyframes pieceCapture {
+    0%   { transform: scale(1);    opacity: 1; filter: brightness(1); }
+    30%  { transform: scale(1.15); filter: brightness(1.8) saturate(0.3); }
+    100% { transform: scale(0.2) translateY(-12px); opacity: 0; filter: brightness(2) blur(2px); }
+}
+.piece-captured {
+    animation: pieceCapture 280ms var(--ease-snap) forwards;
+    pointer-events: none;
+}
+
+/* ── Hologram skin — scoped to player pieces only ─────────────────────────── */
+body.piece-hologram .piece.red {
+    background:
+        linear-gradient(135deg,
+            rgba(0,255,255,0.85),
+            rgba(255,0,255,0.85) 50%,
+            rgba(0,255,255,0.85)
+        ) !important;
+    border-color: rgba(255,255,255,0.5) !important;
+    animation: holoShimmer 2.5s linear infinite;
+}
+@keyframes holoShimmer {
+    0%   { filter: hue-rotate(0deg)   brightness(1.05); }
+    100% { filter: hue-rotate(360deg) brightness(1.25); }
+}
+
+/* === MOVE LOG ============================================================= */
+.move-log-panel { width: 100%; max-width: 550px; box-sizing: border-box; margin-top: 14px; }
+.move-log-toggle {
+    width: 100%; background: var(--panel);
+    border: 1px solid rgba(26,188,156,0.3);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    padding: 8px 14px; color: var(--text2); cursor: pointer;
+    font-size: 0.8rem; font-family: 'Nunito', sans-serif; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+    text-align: left; transition: filter 0.15s;
+}
+.move-log-toggle:hover { filter: brightness(1.12); }
+.toggle-hint { font-size: 0.68rem; color: var(--text3); font-weight: 400; }
+.move-log-body {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(26,188,156,0.25); border-top: none;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    max-height: 120px; overflow-y: auto;
+    transition: max-height 280ms var(--spring-soft);
+}
+.move-log-body.collapsed { max-height: 0; overflow: hidden; border-color: transparent; }
+#move-log-list {
+    list-style: none; margin: 0; padding: 6px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+}
+#move-log-list li {
+    font-size: 0.74rem; font-family: 'Courier New', monospace;
+    color: var(--text3); padding: 2px 6px; border-radius: 3px;
+    animation: logEntry 200ms var(--ease-out-expo) both;
+}
+@keyframes logEntry {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: none; }
+}
+#move-log-list .log-capture {
+    color: #e74c3c; background: rgba(231,76,60,0.1); font-weight: bold;
+}
