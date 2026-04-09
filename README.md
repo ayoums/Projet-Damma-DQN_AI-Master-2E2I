@@ -91,7 +91,6 @@ Two identical networks run in parallel (Double DQN):
 ## 🎮 Game Features
 
 - ♟️ Full **Moroccan Dama** rules (mandatory captures, multi-jump chains, king promotion)
-- 🤖 **3 difficulty levels** (Easy / Medium / Hard)
 - 📅 **Daily Challenge** mode
 - 🏪 **Item Shop** — unlock board skins and piece styles with earned coins
 - 📊 **Stats & Achievements** system
